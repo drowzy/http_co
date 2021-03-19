@@ -15,7 +15,9 @@ defmodule HTTPCo.Response do
     struct(__MODULE__, opts)
   end
 
+
   @spec await(t()) :: t()
+  def await(%__MODULE__{errors: errors} = res) when not is_nil(errors), do: res
   def await(%__MODULE__{conn: conn} = res) do
     receive do
       message ->
@@ -39,14 +41,6 @@ defmodule HTTPCo.Response do
       {:data, ^ref, data} -> {:cont, %{res | body: data}}
       {:done, ^ref} -> {:halt, res}
     end
-  end
-
-  defp handle_message(
-         {:status, request_ref, status_code},
-         {_, %__MODULE__{ref: ref} = res}
-       )
-       when request_ref == ref do
-    {:cont, %{res | status_code: status_code}}
   end
 
   @spec with_error(t(), term()) :: t()
