@@ -15,7 +15,6 @@ defmodule HTTPCo.Response do
     struct(__MODULE__, opts)
   end
 
-
   @spec await(t()) :: t()
   def await(%__MODULE__{errors: errors} = res) when not is_nil(errors), do: res
   def await(%__MODULE__{conn: conn} = res) do
@@ -30,6 +29,11 @@ defmodule HTTPCo.Response do
     end
   end
 
+  @spec with_error(t(), term()) :: t()
+  def with_error(res, _reason) do
+    res
+  end
+
   defp handle_messages(%__MODULE__{} = res, responses) do
     Enum.reduce(responses, {:cont, res}, &handle_message/2)
   end
@@ -41,10 +45,5 @@ defmodule HTTPCo.Response do
       {:data, ^ref, data} -> {:cont, %{res | body: data}}
       {:done, ^ref} -> {:halt, res}
     end
-  end
-
-  @spec with_error(t(), term()) :: t()
-  def with_error(res, _reason) do
-    res
   end
 end
