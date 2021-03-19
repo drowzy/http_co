@@ -78,7 +78,7 @@ defmodule HTTPCo.RequestTest do
       url = "unix://#{socket_path}"
       req = Request.get(url)
 
-      assert {"GET", {:http, {:local, ^socket_path}, 0}} = Request.into_conn(req)
+      assert {:http, {:local, ^socket_path}, 0} = Request.into_conn(req)
     end
 
     test "for unix socket + http scheme" do
@@ -86,7 +86,7 @@ defmodule HTTPCo.RequestTest do
       url = "http+unix://#{socket_path}"
       req = Request.get(url)
 
-      assert {"GET", {:http, {:local, ^socket_path}, 0}} = Request.into_conn(req)
+      assert {:http, {:local, ^socket_path}, 0} = Request.into_conn(req)
     end
 
     test "for http" do
@@ -94,7 +94,7 @@ defmodule HTTPCo.RequestTest do
       url = "http://#{host}"
       req = Request.get(url)
 
-      assert {"GET", {:http, ^host, 80}} = Request.into_conn(req)
+      assert {:http, ^host, 80} = Request.into_conn(req)
     end
   end
 end

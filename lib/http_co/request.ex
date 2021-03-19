@@ -59,17 +59,14 @@ defmodule HTTPCo.Request do
 
   @spec into_conn(t()) :: {term(), term()}
   def into_conn(%__MODULE__{
-        method: method,
         path: path,
         host: host,
         port: port,
         scheme: scheme
       }) do
-    method = method_to_string(method)
-
     case scheme do
-      :unix -> {method, {:http, {:local, path}, 0}}
-      scheme -> {method, {scheme, host, port}}
+      :unix -> {:http, {:local, path}, 0}
+      scheme -> {scheme, host, port}
     end
   end
 
@@ -87,6 +84,10 @@ defmodule HTTPCo.Request do
   def body(%__MODULE__{} = req, body) do
     %{req | body: body}
   end
+
+  @spec method_to_string(t()) :: String.t()
+  def method_to_string(%__MODULE__{method: method}),
+    do: method |> Atom.to_string() |> String.upcase()
 
   defp parse_url(url) when is_binary(url) do
     url
@@ -115,5 +116,4 @@ defmodule HTTPCo.Request do
 
   defp qs(query) when map_size(query) == 0, do: ""
   defp qs(query), do: "?" <> URI.encode_query(query)
-  defp method_to_string(method), do: method |> Atom.to_string() |> String.upcase()
 end
