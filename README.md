@@ -1,6 +1,17 @@
 # HTTPCo
 
-**TODO: Add description**
+A composable HTTP client library for Elixir
+
+```elixir
+"http://httpbin.org"
+|> HTTPCo.get()
+|> HTTPCo.Request.set_header({"Accept", "application/json"})
+|> HTTPCo.Request.set_query({"key", "value"})
+|> HTTPCo.run()
+|> HTTPCo.Response.with_transform(&:erlang.iolist_to_binary/1)
+|> HTTPCo.Response.with_transform(&Jason.decode/1)
+|> HTTPCo.Response.into_response()
+```
 
 ## Installation
 
@@ -18,4 +29,3 @@ end
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/http_co](https://hexdocs.pm/http_co).
-
