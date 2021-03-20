@@ -10,15 +10,28 @@ defmodule HTTPCo do
   defdelegate get(url), to: Request
   defdelegate delete(url), to: Request
 
-  @spec run(Request.t()) :: Response.t()
-  def run(%Request{headers: headers, body: body} = req) do
+  @spec run(Mint.HTTP.t(), Request.t()) :: Response.t()
+  def run(conn, %Request{headers: headers, body: body} = req) do
     path = Request.request_path(req)
     method = Request.method_to_string(req)
 
-    with {:ok, conn} <- connect(req),
-         {:ok, conn, ref} <- Mint.HTTP.request(conn, method, path, headers, body) do
-      Response.new(conn: conn, ref: ref)
-    else
+    case Mint.HTTP.request(conn, method, path, headers, body) do
+      {:ok, conn, ref} ->
+        Response.new(conn: conn, ref: ref)
+
+      {:error, conn, reason} ->
+        [conn: conn]
+        |> Response.new()
+        |> Response.with_error(reason)
+    end
+  end
+
+  @spec run(Request.t()) :: Response.t()
+  def run(%Request{} = req) do
+    case connect(req) do
+      {:ok, conn} ->
+        run(conn, req)
+
       {:error, reason} ->
         []
         |> Response.new()
