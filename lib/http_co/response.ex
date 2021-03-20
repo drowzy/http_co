@@ -1,14 +1,13 @@
 defmodule HTTPCo.Response do
   @type t :: %__MODULE__{}
-  defstruct [
-    :ref,
-    :conn,
-    :errors,
-    :status_code,
-    :content_length,
-    :headers,
-    :body
-  ]
+  defstruct ref: nil,
+            conn: nil,
+            errors: nil,
+            status_code: nil,
+            content_length: 0,
+            message_handler: &Mint.HTTP.stream/2,
+            headers: [],
+            body: []
 
   @spec new(Keyword.t()) :: t()
   def new(opts) do
@@ -17,10 +16,11 @@ defmodule HTTPCo.Response do
 
   @spec await(t()) :: t()
   def await(%__MODULE__{errors: errors} = res) when not is_nil(errors), do: res
-  def await(%__MODULE__{conn: conn} = res) do
+
+  def await(%__MODULE__{conn: conn, message_handler: handler} = res) do
     receive do
       message ->
-        {:ok, conn, responses} = Mint.HTTP.stream(conn, message)
+        {:ok, conn, responses} = handler.(conn, message)
 
         case handle_messages(%{res | conn: conn}, responses) do
           {:cont, res} -> await(res)
@@ -42,7 +42,7 @@ defmodule HTTPCo.Response do
     case response do
       {:status, ^ref, status_code} -> {:cont, %{res | status_code: status_code}}
       {:headers, ^ref, headers} -> {:cont, %{res | headers: headers}}
-      {:data, ^ref, data} -> {:cont, %{res | body: data}}
+      {:data, ^ref, data} -> {:cont, %{res | body: [data | res.body]}}
       {:done, ^ref} -> {:halt, res}
     end
   end

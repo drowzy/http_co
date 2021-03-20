@@ -30,7 +30,6 @@ defmodule HTTPCoTest do
 
     test "returns a %Response if the request is successfull", %{bypass: bypass} do
       req = HTTPCo.get(endpoint_url(bypass))
-      # Bypass.expect_once(bypass, "GET", "/", &Plug.Conn.send_resp(&1, 200, "OK"))
 
       assert %Response{} = HTTPCo.run(req)
     end
@@ -40,7 +39,7 @@ defmodule HTTPCoTest do
       Bypass.expect_once(bypass, "GET", "/", &Plug.Conn.send_resp(&1, 200, "OK"))
 
       assert %Response{body: body} = req |> HTTPCo.run() |> Response.await()
-      assert body == "OK"
+      assert body == ["OK"]
     end
   end
 
