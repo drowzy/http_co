@@ -21,6 +21,40 @@ defmodule HTTPCo.ResponseTest do
     end
   end
 
+  describe "into" do
+    test "into_raw_response/1 returns the raw body" do
+      body = ["OK"]
+      res = Response.new(body: body)
+
+      assert body == Response.into_raw_response(res)
+    end
+
+    test "into_binary/1 returns a binary the http body" do
+      body = ["OK"]
+      res = Response.new(body: body)
+
+      assert "OK" == Response.into_binary(res)
+    end
+
+    test "into_response/1 returns the raw response body transforms are empty" do
+      body = ["OK"]
+      res = Response.new(body: body)
+
+      assert body == Response.into_response(res)
+    end
+
+    test "into_response/1 returns runs the functions serially over the response body" do
+      body = ["OK"]
+
+      res =
+        [body: body]
+        |> Response.new()
+        |> Response.with_transform(&["ADDED" | &1])
+
+      assert ["ADDED", "OK"] == Response.into_response(res)
+    end
+  end
+
   defp make_handler(ref) do
     fn conn, {_, _, _} ->
       {:ok, conn,
