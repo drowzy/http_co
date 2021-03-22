@@ -36,7 +36,7 @@ defmodule HTTPCo.ResponseTest do
       assert "OK" == Response.into_binary(res)
     end
 
-    test "into_response/1 returns the raw response body transforms are empty" do
+    test "into_response/1 returns the raw response when fns are empty" do
       body = ["OK"]
       res = Response.new(body: body)
 
@@ -49,7 +49,7 @@ defmodule HTTPCo.ResponseTest do
       res =
         [body: body]
         |> Response.new()
-        |> Response.with_transform(&["ADDED" | &1])
+        |> Response.map_ok(&["ADDED" | &1])
 
       assert ["ADDED", "OK"] == Response.into_response(res)
     end

@@ -8,8 +8,9 @@ A composable HTTP client library for Elixir
 |> HTTPCo.Request.set_header({"Accept", "application/json"})
 |> HTTPCo.Request.set_query({"key", "value"})
 |> HTTPCo.run()
-|> HTTPCo.Response.with_transform(&:erlang.iolist_to_binary/1)
-|> HTTPCo.Response.with_transform(&Jason.decode/1)
+|> HTTPCo.Response.map_ok(&:erlang.iolist_to_binary/1)
+|> HTTPCo.Response.map_ok(&Jason.decode/1)
+|> HTTPCo.Response.map_err(&Error.handler/1)
 |> HTTPCo.Response.into_response()
 ```
 

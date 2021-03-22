@@ -8,7 +8,8 @@ defmodule HTTPCo.Response do
             headers: [],
             body: [],
             message_handler: &Mint.HTTP.stream/2,
-            response_funs: []
+            fns: [],
+            err_fns: []
 
   @spec new(Keyword.t()) :: t()
   def new(opts) do
@@ -43,9 +44,19 @@ defmodule HTTPCo.Response do
     |> :erlang.iolist_to_binary()
   end
 
-  @spec with_transform(t(), (term() -> term())) :: t()
-  def with_transform(%__MODULE__{} = res, fun) when is_function(fun) do
-    %{res | response_funs: [fun | res.response_funs]}
+  @spec into_result(t()) :: {:ok, t(), term()} | {:error, t(), term()}
+  def into_result(%__MODULE__{errors: nil} = res), do: {:ok, res, apply_fns(res)}
+  # TODO
+  def into_result(%__MODULE__{} = res), do: {:error, res, :reason}
+
+  @spec map_ok(t(), (term() -> term())) :: t()
+  def map_ok(%__MODULE__{} = res, fun) when is_function(fun) do
+    %{res | fns: [fun | res.fns]}
+  end
+
+  @spec map_err(t(), (term() -> term())) :: t()
+  def map_err(%__MODULE__{} = res, fun) when is_function(fun) do
+    %{res | err_fns: [fun | res.err_fns]}
   end
 
   @spec with_error(t(), term()) :: t()
@@ -66,8 +77,8 @@ defmodule HTTPCo.Response do
     end
   end
 
-  defp apply_fns(%__MODULE__{response_funs: [], body: body}), do: body
+  defp apply_fns(%__MODULE__{fns: [], body: body}), do: body
 
-  defp apply_fns(%__MODULE__{response_funs: rfs, body: body}),
-    do: Enum.reduce(rfs, body, & &1.(&2))
+  defp apply_fns(%__MODULE__{fns: fns, body: body}),
+    do: fns |> Enum.reverse() |> Enum.reduce(body, & &1.(&2))
 end
