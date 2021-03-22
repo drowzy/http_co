@@ -65,8 +65,11 @@ defmodule HTTPCo.Request do
         scheme: scheme
       }) do
     case scheme do
-      :unix -> {:http, {:local, path}, 0}
-      scheme -> {scheme, host, port}
+      :unix ->
+        host_path = if host == "", do: path, else: host
+
+        {:http, {:local, host_path}, 0, [hostname: "localhost"]}
+      scheme -> {scheme, host, port, []}
     end
   end
 
@@ -75,8 +78,8 @@ defmodule HTTPCo.Request do
     %{req | headers: [header | headers]}
   end
 
-  @spec set_query_item(t(), {String.t(), String.t()}) :: t()
-  def set_query_item(%__MODULE__{query: query} = req, {key, value}) do
+  @spec query_param(t(), {String.t(), String.t()}) :: t()
+  def query_param(%__MODULE__{query: query} = req, {key, value}) do
     %{req | query: Map.put(query, key, value)}
   end
 

@@ -41,8 +41,8 @@ defmodule HTTPCo do
 
   @spec connect(Request.t()) :: {:ok, Mint.HTTP.t()} | {:error, Mint.Types.error()}
   def connect(%Request{} = req) do
-    {scheme, host, port} = Request.into_conn(req)
+    {scheme, host, port, opts} = Request.into_conn(req)
 
-    Mint.HTTP.connect(scheme, host, port)
+    Mint.HTTP.connect(scheme, host, port, opts)
   end
 end

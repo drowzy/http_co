@@ -66,7 +66,7 @@ defmodule HTTPCo.RequestTest do
 
     test "adds query kv pair to query" do
       req = %Request{query: %{}}
-      assert %Request{query: query} = Request.set_query_item(req, {"key", "value"})
+      assert %Request{query: query} = Request.query_param(req, {"key", "value"})
 
       assert Map.get(query, "key") == "value"
     end
@@ -78,7 +78,16 @@ defmodule HTTPCo.RequestTest do
       url = "unix://#{socket_path}"
       req = Request.get(url)
 
-      assert {:http, {:local, ^socket_path}, 0} = Request.into_conn(req)
+      assert {:http, {:local, ^socket_path}, 0, _} = Request.into_conn(req)
+    end
+
+    test "for unix socket sets the hostname as opts" do
+      socket_path = "/var/run/docker.sock"
+      url = "unix://#{socket_path}"
+      req = Request.get(url)
+
+      assert {:http, {:local, ^socket_path}, 0, opts} = Request.into_conn(req)
+      assert Keyword.get(opts, :hostname) == "localhost"
     end
 
     test "for unix socket + http scheme" do
@@ -86,7 +95,7 @@ defmodule HTTPCo.RequestTest do
       url = "http+unix://#{socket_path}"
       req = Request.get(url)
 
-      assert {:http, {:local, ^socket_path}, 0} = Request.into_conn(req)
+      assert {:http, {:local, ^socket_path}, 0, _} = Request.into_conn(req)
     end
 
     test "for http" do
@@ -94,7 +103,7 @@ defmodule HTTPCo.RequestTest do
       url = "http://#{host}"
       req = Request.get(url)
 
-      assert {:http, ^host, 80} = Request.into_conn(req)
+      assert {:http, ^host, 80, []} = Request.into_conn(req)
     end
   end
 end

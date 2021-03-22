@@ -15,7 +15,7 @@ defmodule HTTPCoTest do
     end
 
     test "returns error if connection is unsuccessful" do
-      req = HTTPCo.get(endpoint_url(%{port: 5000}))
+      req = HTTPCo.get(endpoint_url(%{port: 2000}))
 
       assert {:error, reason} = HTTPCo.connect(req)
       assert reason == %Mint.TransportError{reason: :econnrefused}
@@ -40,6 +40,31 @@ defmodule HTTPCoTest do
 
       assert %Response{body: body} = req |> HTTPCo.run() |> Response.await()
       assert body == ["OK"]
+    end
+  end
+
+  describe "connect/1 unix socket" do
+    setup do
+      opts = [
+        :binary,
+        packet: :line,
+        active: false,
+        reuseaddr: false,
+        ip: {:local, "test.sock"}
+      ]
+
+      {:ok, socket} = :gen_tcp.listen(0, opts)
+
+      on_exit(fn ->
+        :gen_tcp.shutdown(socket, :read_write)
+        File.rm!("test.sock")
+      end)
+    end
+
+    test "connects successfully to provided socket" do
+      req = HTTPCo.get("unix://test.sock")
+
+      assert {:ok, _conn} = HTTPCo.connect(req)
     end
   end
 
