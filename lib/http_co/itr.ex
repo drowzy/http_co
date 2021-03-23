@@ -26,7 +26,7 @@ defmodule HTTPCo.Iterator do
   end
 end
 
-defimpl Enumerable, for: HTTPCo.Response.Iterator do
+defimpl Enumerable, for: HTTPCo.Iterator do
   alias HTTPCo.Iterator
 
   def reduce(%Iterator{}, {:halt, acc}, _fun) do
@@ -39,15 +39,20 @@ defimpl Enumerable, for: HTTPCo.Response.Iterator do
 
   def reduce(%Iterator{process: process} = itr, {:cont, acc}, fun) do
     case Iterator.next(itr) do
-      {:cont, state} ->
+      {:cont, itr} ->
         acc =
-          state
+          itr.state
           |> process.()
           |> fun.(acc)
 
-        reduce(%{itr | state: state}, acc, fun)
+        reduce(itr, acc, fun)
 
-      {:halt, _state} ->
+      {:halt, itr} ->
+        acc =
+          itr.state
+          |> process.()
+          |> fun.(acc)
+
         {:done, acc}
     end
   end

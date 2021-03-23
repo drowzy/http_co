@@ -24,5 +24,36 @@ defmodule HTTPCo.IteratorTest do
   end
 
   describe "Enumerable impl" do
+    test "generates values using next" do
+      next_fn = fn
+        count when count < 10 -> {:cont, count + 1}
+        count -> {:halt, count}
+      end
+
+      process = &Function.identity/1
+
+      opts = [next: next_fn, process: process, state: 0]
+      itr = Iterator.new(opts)
+
+      assert Enum.take(itr, 1) == [1]
+    end
+
+    test "calls process for each iteration" do
+      next_fn = fn
+        count when count < 1 -> {:cont, count + 1}
+        count -> {:halt, count}
+      end
+
+      process = &(&1 + 1)
+
+      opts = [next: next_fn, process: process, state: 0]
+
+      values =
+        opts
+        |> Iterator.new()
+        |> Enum.take(1)
+
+      assert values == [2]
+    end
   end
 end
