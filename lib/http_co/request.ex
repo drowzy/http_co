@@ -15,6 +15,7 @@ defmodule HTTPCo.Request do
   @type http_method :: :post | :put | :get | :delete
   @type url :: String.t() | Uri.t()
   @type header_value :: {String.t(), String.t()}
+  @type schema :: :http | :https | :unix
 
   @spec get(url()) :: t()
   def get(url) do
@@ -57,7 +58,7 @@ defmodule HTTPCo.Request do
     path <> qs(query)
   end
 
-  @spec into_conn(t()) :: {term(), term()}
+  @spec into_conn(t()) :: {schema(), :inet.socket_address(), integer(), Keyword.t()}
   def into_conn(%__MODULE__{
         path: path,
         host: host,
@@ -69,7 +70,9 @@ defmodule HTTPCo.Request do
         host_path = if host == "", do: path, else: host
 
         {:http, {:local, host_path}, 0, [hostname: "localhost"]}
-      scheme -> {scheme, host, port, []}
+
+      scheme ->
+        {scheme, host, port, []}
     end
   end
 
