@@ -1,5 +1,9 @@
 # HTTPCo
 
+---
+
+![CI](https://github.com/drowzy/http_co/actions/workflows/ci.yml/badge.svg)
+
 A composable HTTP client library for Elixir
 
 ```elixir
