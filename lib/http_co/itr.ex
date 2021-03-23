@@ -40,18 +40,12 @@ defimpl Enumerable, for: HTTPCo.Iterator do
   def reduce(%Iterator{process: process} = itr, {:cont, acc}, fun) do
     case Iterator.next(itr) do
       {:cont, itr} ->
-        acc =
-          itr.state
-          |> process.()
-          |> fun.(acc)
+        acc = do_process(itr, process, acc, fun)
 
         reduce(itr, acc, fun)
 
       {:halt, itr} ->
-        acc =
-          itr.state
-          |> process.()
-          |> fun.(acc)
+        acc = do_process(itr, process, acc, fun)
 
         {:done, acc}
     end
@@ -67,5 +61,11 @@ defimpl Enumerable, for: HTTPCo.Iterator do
 
   def slice(_stream) do
     {:error, HTTPCo.Iterator}
+  end
+
+  defp do_process(itr, process, acc, fun) do
+    itr.state
+    |> process.()
+    |> fun.(acc)
   end
 end
