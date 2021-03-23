@@ -56,7 +56,7 @@ defmodule HTTPCo.ResponseTest do
   end
 
   defp make_handler(ref) do
-    fn conn, {_, _, _} ->
+    fn conn, _, _ ->
       {:ok, conn,
        [
          {:status, ref, 200},

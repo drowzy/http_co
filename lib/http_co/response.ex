@@ -1,4 +1,5 @@
 defmodule HTTPCo.Response do
+  alias HTTPCo.Iterator
   @type t :: %__MODULE__{}
   defstruct ref: nil,
             conn: nil,
@@ -7,7 +8,7 @@ defmodule HTTPCo.Response do
             content_length: 0,
             headers: [],
             body: [],
-            message_handler: &Mint.HTTP.stream/2,
+            message_handler: &Mint.HTTP.recv/3,
             fns: [],
             err_fns: []
 
@@ -19,16 +20,10 @@ defmodule HTTPCo.Response do
   @spec await(t()) :: t()
   def await(%__MODULE__{errors: errors} = res) when not is_nil(errors), do: res
 
-  def await(%__MODULE__{conn: conn, message_handler: handler} = res) do
-    receive do
-      message ->
-        {:ok, conn, responses} = handler.(conn, message)
-
-        case handle_messages(%{res | conn: conn}, responses) do
-          {:cont, res} -> await(res)
-          {:halt, res} -> res
-        end
-    end
+  def await(%__MODULE__{} = res) do
+    [state: res, next: &itr_reduce/1]
+    |> Iterator.new()
+    |> itr_next()
   end
 
   @spec into_response(t()) :: term()
@@ -60,8 +55,22 @@ defmodule HTTPCo.Response do
   end
 
   @spec with_error(t(), term()) :: t()
-  def with_error(res, _reason) do
-    res
+  def with_error(res, reason) do
+    %{res | errors: [reason | res.errors]}
+  end
+
+  defp itr_next(%Iterator{} = itr) do
+    case Iterator.next(itr) do
+      {:cont, %Iterator{} = itr} -> itr_next(itr)
+      {:halt, %Iterator{state: res}} -> res
+    end
+  end
+
+  defp itr_reduce(%__MODULE__{conn: conn, message_handler: fun} = res) do
+    case fun.(conn, 0, 5000) do
+      {:ok, conn, responses} -> handle_messages(%{res | conn: conn}, responses)
+      _ -> {:halt, res}
+    end
   end
 
   defp handle_messages(%__MODULE__{} = res, responses) do
