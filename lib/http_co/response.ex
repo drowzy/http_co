@@ -28,6 +28,11 @@ defmodule HTTPCo.Response do
     |> itr_next()
   end
 
+  @spec into_stream(t()) :: Enumerable.t()
+  def into_stream(%__MODULE__{} = res) do
+    Iterator.new([state: res, next: &itr_reduce/1])
+  end
+
   @spec into_response(t()) :: term()
   def into_response(%__MODULE__{} = res), do: apply_fns(res)
 
