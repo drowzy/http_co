@@ -1,6 +1,8 @@
 defmodule HTTPCo.Response do
   alias HTTPCo.Iterator
   @type t :: %__MODULE__{}
+  @type mfargs :: {m :: module(), f :: atom(), a :: [term()] | :undefined}
+
   defstruct ref: nil,
             conn: nil,
             errors: nil,
@@ -44,13 +46,23 @@ defmodule HTTPCo.Response do
   # TODO
   def into_result(%__MODULE__{} = res), do: {:error, res, :reason}
 
-  @spec map_ok(t(), (term() -> term())) :: t()
+  @spec map_ok(t(), (term() -> term()) | mfargs()) :: t()
   def map_ok(%__MODULE__{} = res, fun) when is_function(fun) do
     %{res | fns: [fun | res.fns]}
   end
 
-  @spec map_err(t(), (term() -> term())) :: t()
+  def map_ok(%__MODULE__{} = res, {_m, _f, _a} = mfa) do
+    fun = wrap_mfa(mfa)
+    %{res | fns: [fun | res.fns]}
+  end
+
+  @spec map_err(t(), (term() -> term()) | mfargs()) :: t()
   def map_err(%__MODULE__{} = res, fun) when is_function(fun) do
+    %{res | err_fns: [fun | res.err_fns]}
+  end
+
+  def map_err(%__MODULE__{} = res, {_m, _f, _a} = mfa) do
+    fun = wrap_mfa(mfa)
     %{res | err_fns: [fun | res.err_fns]}
   end
 
@@ -83,6 +95,12 @@ defmodule HTTPCo.Response do
       {:headers, ^ref, headers} -> {:cont, %{res | headers: headers}}
       {:data, ^ref, data} -> {:cont, %{res | body: [data | res.body]}}
       {:done, ^ref} -> {:halt, res}
+    end
+  end
+
+  defp wrap_mfa({m, f, a}) do
+    fn data ->
+      apply(m, f, [data | a])
     end
   end
 
