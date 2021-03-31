@@ -11,8 +11,8 @@ defmodule HTTPCo.Response do
             headers: [],
             body: [],
             message_handler: &Mint.HTTP.recv/3,
-            fns: [],
-            err_fns: []
+            fns: :queue.new(),
+            err_fns: :queue.new()
 
   @spec new(Keyword.t()) :: t()
   def new(opts) do
@@ -30,7 +30,7 @@ defmodule HTTPCo.Response do
 
   @spec into_stream(t()) :: Enumerable.t()
   def into_stream(%__MODULE__{} = res) do
-    Iterator.new([state: res, next: &itr_reduce/1])
+    Iterator.new(state: res, next: &itr_reduce/1)
   end
 
   @spec into_response(t()) :: term()
@@ -53,22 +53,22 @@ defmodule HTTPCo.Response do
 
   @spec map_ok(t(), (term() -> term()) | mfargs()) :: t()
   def map_ok(%__MODULE__{} = res, fun) when is_function(fun) do
-    %{res | fns: [fun | res.fns]}
+    %{res | fns: :queue.in(fun, res.fns)}
   end
 
   def map_ok(%__MODULE__{} = res, {_m, _f, _a} = mfa) do
     fun = wrap_mfa(mfa)
-    %{res | fns: [fun | res.fns]}
+    map_ok(res, fun)
   end
 
   @spec map_err(t(), (term() -> term()) | mfargs()) :: t()
   def map_err(%__MODULE__{} = res, fun) when is_function(fun) do
-    %{res | err_fns: [fun | res.err_fns]}
+    %{res | err_fns: :queue.in(fun, res.err_fns)}
   end
 
   def map_err(%__MODULE__{} = res, {_m, _f, _a} = mfa) do
     fun = wrap_mfa(mfa)
-    %{res | err_fns: [fun | res.err_fns]}
+    map_err(res, fun)
   end
 
   @spec with_error(t(), term()) :: t()
@@ -109,8 +109,12 @@ defmodule HTTPCo.Response do
     end
   end
 
-  defp apply_fns(%__MODULE__{fns: [], body: body}), do: body
+  defp apply_fns(%__MODULE__{fns: fns, body: body}), do: do_apply_fns(fns, body)
 
-  defp apply_fns(%__MODULE__{fns: fns, body: body}),
-    do: fns |> Enum.reverse() |> Enum.reduce(body, & &1.(&2))
+  defp do_apply_fns(fns, body) do
+    case :queue.out(fns) do
+      {{:value, fun}, fns} -> do_apply_fns(fns, fun.(body))
+      {:empty, _fns} -> body
+    end
+  end
 end

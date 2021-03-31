@@ -56,23 +56,27 @@ defmodule HTTPCo.ResponseTest do
   end
 
   describe "combinators" do
-    test "map_ok/2 prepends the function returns the response" do
+    test "map_ok/2 stages the provided function" do
       %Response{fns: fns} = Response.map_ok(%Response{}, &Function.identity/1)
-      assert length(fns) == 1
+      {{:value, fun}, _} = :queue.out(fns)
+      assert is_function(fun)
     end
 
     test "map_ok/2 wraps the mfargs tuple in a function with arity 1" do
-      %Response{fns: [fun | _]} = Response.map_ok(%Response{}, {Function, :identity, []})
+      %Response{fns: fns} = Response.map_ok(%Response{}, {Function, :identity, []})
+      {{:value, fun}, _} = :queue.out(fns)
       assert is_function(fun, 1)
     end
 
-    test "map_err/2 prepends the function returns the response" do
+    test "map_err/2 stages the provided function" do
       %Response{err_fns: fns} = Response.map_err(%Response{}, &Function.identity/1)
-      assert length(fns) == 1
+      {{:value, fun}, _} = :queue.out(fns)
+      assert is_function(fun)
     end
 
     test "map_err/2 wraps the mfargs tuple in a function with arity 1" do
-      %Response{err_fns: [fun | _]} = Response.map_err(%Response{}, {Function, :identity, []})
+      %Response{err_fns: fns} = Response.map_err(%Response{}, {Function, :identity, []})
+      {{:value, fun}, _} = :queue.out(fns)
       assert is_function(fun, 1)
     end
   end
