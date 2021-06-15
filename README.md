@@ -10,7 +10,7 @@ A composable HTTP client library for Elixir
 "http://httpbin.org"
 |> HTTPCo.get()
 |> HTTPCo.Request.set_header({"Accept", "application/json"})
-|> HTTPCo.Request.set_query({"key", "value"})
+|> HTTPCo.Request.query_param({"key", "value"})
 |> HTTPCo.run()
 |> HTTPCo.Response.map_ok(&:erlang.iolist_to_binary/1)
 |> HTTPCo.Response.map_ok(&Jason.decode/1)

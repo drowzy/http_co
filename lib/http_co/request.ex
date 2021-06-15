@@ -6,10 +6,10 @@ defmodule HTTPCo.Request do
     :host,
     :port,
     :method,
-    :headers,
     :path,
-    :query,
-    :body
+    :body,
+    query: %{},
+    headers: []
   ]
 
   @type http_method :: :post | :put | :get | :delete
@@ -89,6 +89,18 @@ defmodule HTTPCo.Request do
   @spec body(t(), iodata()) :: t()
   def body(%__MODULE__{} = req, body) do
     %{req | body: body}
+  end
+
+  @spec pretty_print(t()) :: String.t()
+  def pretty_print(%__MODULE__{headers: hs, host: host, scheme: scheme} = req) do
+    headers =
+      hs
+      |> Enum.map(fn {h, v} -> "#{h}: #{v}" end)
+      |> Enum.join("\n")
+
+    url = "#{Atom.to_string(scheme)}://#{host}#{request_path(req)}"
+
+    "#{method_to_string(req)} #{url}\n#{headers}"
   end
 
   @spec method_to_string(t()) :: String.t()

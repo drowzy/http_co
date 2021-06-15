@@ -3,16 +3,18 @@ defmodule HTTPCo.Response do
   @type t :: %__MODULE__{}
   @type mfargs :: {m :: module(), f :: atom(), a :: [term()] | :undefined}
 
-  defstruct ref: nil,
-            conn: nil,
-            errors: nil,
-            status_code: nil,
-            content_length: 0,
-            headers: [],
-            body: [],
-            message_handler: &Mint.HTTP.recv/3,
-            fns: :queue.new(),
-            err_fns: :queue.new()
+  defstruct [
+    :ref,
+    :conn,
+    :errors,
+    :status_code,
+    content_length: 0,
+    headers: [],
+    body: [],
+    message_handler: &Mint.HTTP.recv/3,
+    fns: :queue.new(),
+    err_fns: :queue.new()
+  ]
 
   @spec new(Keyword.t()) :: t()
   def new(opts) do
