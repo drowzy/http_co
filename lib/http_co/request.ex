@@ -77,8 +77,13 @@ defmodule HTTPCo.Request do
   end
 
   @spec set_header(t(), header_value()) :: t()
-  def set_header(%__MODULE__{headers: headers} = req, header) do
-    %{req | headers: [header | headers]}
+  def set_header(%__MODULE__{headers: headers} = req, h) do
+    %{req | headers: [h | headers]}
+  end
+
+  @spec set_headers(t(), [header_value()]) :: t()
+  def set_headers(%__MODULE__{headers: headers} = req, hs) do
+    %{req | headers: headers ++ hs}
   end
 
   @spec query_param(t(), {String.t(), String.t()}) :: t()
